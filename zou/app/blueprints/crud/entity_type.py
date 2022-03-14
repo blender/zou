@@ -17,6 +17,7 @@ class EntityTypesResource(BaseModelsResource):
 
     def post_creation(self, instance):
         assets_service.clear_asset_type_cache()
+        entities_service.clear_entity_types_cache()
         return instance.serialize()
 
 

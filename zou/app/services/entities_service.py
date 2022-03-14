@@ -24,12 +24,22 @@ def clear_entity_type_cache(entity_type_id):
     cache.cache.delete_memoized(get_entity_type_by_name)
 
 
+def clear_entity_types_cache():
+    cache.cache.delete_memoized(get_entity_types)
+
+
 def get_temporal_entity_type_by_name(name):
     entity_type = get_entity_type_by_name(name)
     if entity_type is None:
         cache.cache.delete_memoized(get_entity_type_by_name, name)
         entity_type = get_entity_type_by_name(name)
     return entity_type
+
+
+@cache.memoize_function(240)
+def get_entity_types():
+    """Return all entity types."""
+    return fields.serialize_models(EntityType.get_all())
 
 
 @cache.memoize_function(240)
@@ -183,6 +193,7 @@ def get_entities_and_tasks(criterions={}):
             entity_map[entity_id] = {
                 "id": str(entity.id),
                 "name": entity.name,
+                "entity_type_id": str(entity.entity_type_id),
                 "description": entity.description,
                 "frame_in": entity.data.get("frame_in", None),
                 "frame_out": entity.data.get("frame_out", None),

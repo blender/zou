@@ -6,7 +6,7 @@ from zou.app.services import (
     persons_service,
     projects_service,
     playlists_service,
-    edits_service,
+    entities_service,
     tasks_service,
     user_service,
 )
@@ -15,37 +15,37 @@ from zou.app.mixin import ArgsMixin
 from zou.app.utils import permissions, query
 
 
-class EditResource(Resource, ArgsMixin):
+class EntityResource(Resource, ArgsMixin):
     @jwt_required
-    def get(self, edit_id):
+    def get(self, entity_id):
         """
-        Retrieve given edit.
+        Retrieve given entity.
         """
-        edit = edits_service.get_full_edit(edit_id)
-        if edit is None:
-            edits_service.clear_edit_cache(edit_id)
-            edit = edits_service.get_full_edit(edit_id)
-        user_service.check_project_access(edit["project_id"])
-        user_service.check_entity_access(edit["id"])
-        return edit
+        entity = entities_service.get_full_entity(entity_id)
+        if entity is None:
+            entities_service.clear_entity_cache(entity_id)
+            entity = entities_service.get_full_entity(entity_id)
+        user_service.check_project_access(entity["project_id"])
+        user_service.check_entity_access(entity["id"])
+        return entity
 
     @jwt_required
-    def delete(self, edit_id):
+    def delete(self, entity_id):
         """
-        Delete given edit.
+        Delete given entity.
         """
         force = self.get_force()
-        edit = edits_service.get_edit(edit_id)
-        user_service.check_manager_project_access(edit["project_id"])
-        edits_service.remove_edit(edit_id, force=force)
+        entity = entities_service.get_entity(entity_id)
+        user_service.check_manager_project_access(entity["project_id"])
+        entities_service.remove_entity(entity_id, force=force)
         return "", 204
 
 
-class EditsResource(Resource):
+class EntitiesResource(Resource):
     @jwt_required
     def get(self):
         """
-        Retrieve all edit entries. Filters can be specified in the query string.
+        Retrieve all entity entries. Filters can be specified in the query string.
         """
         criterions = query.get_query_criterions_from_request(request)
         user_service.check_project_access(criterions.get("project_id", None))
@@ -53,14 +53,14 @@ class EditsResource(Resource):
             criterions["assigned_to"] = persons_service.get_current_user()[
                 "id"
             ]
-        return edits_service.get_edits(criterions)
+        return entities_service.get_entities(criterions)
 
 
-class AllEditsResource(Resource):
+class AllEntitiesResource(Resource):
     @jwt_required
     def get(self):
         """
-        Retrieve all edit entries. Filters can be specified in the query string.
+        Retrieve all entity entries. Filters can be specified in the query string.
         """
         criterions = query.get_query_criterions_from_request(request)
         if permissions.has_vendor_permissions():
@@ -68,129 +68,130 @@ class AllEditsResource(Resource):
                 "id"
             ]
         user_service.check_project_access(criterions.get("project_id", None))
-        return edits_service.get_edits(criterions)
+        return entities_service.get_entities(criterions)
 
 
-class EditTaskTypesResource(Resource):
+class EntityTaskTypesResource(Resource):
     @jwt_required
-    def get(self, edit_id):
+    def get(self, entity_id):
         """
-        Retrieve all task types related to a given edit.
+        Retrieve all task types related to a given entity.
         """
-        edit = edits_service.get_edit(edit_id)
-        user_service.check_project_access(edit["project_id"])
-        user_service.check_entity_access(edit["id"])
-        return tasks_service.get_task_types_for_edit(edit_id)
+        entity = entities_service.get_entity(entity_id)
+        user_service.check_project_access(entity["project_id"])
+        user_service.check_entity_access(entity["id"])
+        return tasks_service.get_task_types_for_entity(entity_id)
 
 
-class EditTasksResource(Resource, ArgsMixin):
+class EntityTasksResource(Resource, ArgsMixin):
     @jwt_required
-    def get(self, edit_id):
+    def get(self, entity_id):
         """
-        Retrieve all tasks related to a given edit.
+        Retrieve all tasks related to a given entity.
         """
-        edit = edits_service.get_edit(edit_id)
-        user_service.check_project_access(edit["project_id"])
-        user_service.check_entity_access(edit["id"])
+        entity = entities_service.get_entity(entity_id)
+        user_service.check_project_access(entity["project_id"])
+        user_service.check_entity_access(entity["id"])
         relations = self.get_relations()
-        return tasks_service.get_tasks_for_edit(edit_id, relations=relations)
+        return tasks_service.get_tasks_for_entity(entity_id, relations=relations)
 
 
-class EpisodeEditTasksResource(Resource, ArgsMixin):
+class EpisodeEntityTasksResource(Resource, ArgsMixin):
     @jwt_required
     def get(self, episode_id):
         """
         Retrieve all tasks related to a given episode.
         """
-        episode = edits_service.get_episode(episode_id)
+        episode = entities_service.get_episode(episode_id)
         user_service.check_project_access(episode["project_id"])
         user_service.check_entity_access(episode["id"])
         if permissions.has_vendor_permissions():
             raise permissions.PermissionDenied
         relations = self.get_relations()
-        return tasks_service.get_edit_tasks_for_episode(
+        return tasks_service.get_entity_tasks_for_episode(
             episode_id, relations=relations
         )
 
 
-class EpisodeEditsResource(Resource, ArgsMixin):
+class EpisodeEntitiesResource(Resource, ArgsMixin):
     @jwt_required
     def get(self, episode_id):
         """
-        Retrieve all edits related to a given episode.
+        Retrieve all entities related to a given episode.
         """
-        episode = edits_service.get_episode(episode_id)
+        episode = entities_service.get_episode(episode_id)
         user_service.check_project_access(episode["project_id"])
         user_service.check_entity_access(episode["id"])
         relations = self.get_relations()
-        return edits_service.get_edits_for_episode(
+        return entities_service.get_entities_for_episode(
             episode_id, relations=relations
         )
 
 
-class EditPreviewsResource(Resource):
+class EntityPreviewsResource(Resource):
     @jwt_required
-    def get(self, edit_id):
+    def get(self, entity_id):
         """
-        Retrieve all previews related to a given edit. It sends them
+        Retrieve all previews related to a given entity. It sends them
         as a dict. Keys are related task type ids and values are arrays
         of preview for this task type.
         """
-        edit = edits_service.get_edit(edit_id)
-        user_service.check_project_access(edit["project_id"])
-        user_service.check_entity_access(edit["id"])
-        return playlists_service.get_preview_files_for_entity(edit_id)
+        entity = entities_service.get_entity(entity_id)
+        user_service.check_project_access(entity["project_id"])
+        user_service.check_entity_access(entity["id"])
+        return playlists_service.get_preview_files_for_entity(entity_id)
 
 
-class EditsAndTasksResource(Resource):
+class EntitiesAndTasksResource(Resource):
     @jwt_required
     def get(self):
         """
-        Retrieve all edits, adds project name and all related tasks.
+        Retrieve all entities, adds project name and all related tasks.
         """
         criterions = query.get_query_criterions_from_request(request)
         user_service.check_project_access(criterions.get("project_id", None))
+        print(criterions)
         if permissions.has_vendor_permissions():
             criterions["assigned_to"] = persons_service.get_current_user()[
                 "id"
             ]
-        return edits_service.get_edits_and_tasks(criterions)
+        return entities_service.get_entities_and_tasks(criterions)
 
 
-class ProjectEditsResource(Resource):
+class ProjectEntitiesResource(Resource):
     @jwt_required
     def get(self, project_id):
         """
-        Retrieve all edits related to a given project.
+        Retrieve all entities related to a given project.
         """
         projects_service.get_project(project_id)
         user_service.check_project_access(project_id)
-        return edits_service.get_edits_for_project(
+        return entities_service.get_entities_for_project(
             project_id, only_assigned=permissions.has_vendor_permissions()
         )
 
     @jwt_required
     def post(self, project_id):
         """
-        Create a edit for given project.
+        Create a entity for given project.
         """
         (name, description, data, parent_id) = self.get_arguments()
         projects_service.get_project(project_id)
         user_service.check_manager_project_access(project_id)
 
-        edit = edits_service.create_edit(
+        entity = entities_service.create_entity(
             project_id,
             name,
             data=data,
             description=description,
             parent_id=parent_id,
         )
-        return edit, 201
+        return entity, 201
 
     def get_arguments(self):
         parser = reqparse.RequestParser()
         parser.add_argument(
-            "name", help="The edit name is required.", required=True
+            "name", help="The entity name is required.", required=True
         )
         parser.add_argument("description")
         parser.add_argument("data", type=dict)
@@ -204,14 +205,14 @@ class ProjectEditsResource(Resource):
         )
 
 
-class EditVersionsResource(Resource):
+class EntityVersionsResource(Resource):
     """
-    Retrieve data versions of given edit.
+    Retrieve data versions of given entity.
     """
 
     @jwt_required
-    def get(self, edit_id):
-        edit = edits_service.get_edit(edit_id)
-        user_service.check_project_access(edit["project_id"])
-        user_service.check_entity_access(edit["id"])
-        return edits_service.get_edit_versions(edit_id)
+    def get(self, entity_id):
+        entity = entities_service.get_entity(entity_id)
+        user_service.check_project_access(entity["project_id"])
+        user_service.check_entity_access(entity["id"])
+        return entities_service.get_entity_versions(entity_id)

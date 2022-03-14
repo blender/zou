@@ -14,6 +14,7 @@ from zou.app.models.task_type import TaskType
 from zou.app.services import (
     assets_service,
     custom_actions_service,
+    entities_service,
     notifications_service,
     names_service,
     persons_service,
@@ -775,11 +776,13 @@ def get_context():
     task_types = tasks_service.get_task_types()
     task_status_list = tasks_service.get_task_statuses()
     search_filters = get_filters()
+    entity_types = entities_service.get_entity_types()
 
     return {
         "asset_types": asset_types,
         "custom_actions": custom_actions,
         "departments": departments,
+        "entity_types": entity_types,
         "notification_count": notification_count,
         "persons": persons,
         "project_status": project_status_list,
