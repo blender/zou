@@ -38,7 +38,7 @@ def _get_empty_room(current_frame=0):
 
 
 def _get_room_from_data(data):
-    room_id = data["playlist_id"]
+    room_id = data["room_id"]
     return rooms_data.get(room_id, _get_empty_room()), room_id
 
 
@@ -47,7 +47,7 @@ def _leave_room(room_id, user_id):
     room["people"] = list(set(room["people"]) - {user_id})
     if len(room["people"]) > 0:
         rooms_data[room_id] = room
-    else:
+    elif room_id in rooms_data:
         del rooms_data[room_id]
     emit("preview-room:room-people-updated", room, room=room_id)
 
@@ -71,7 +71,8 @@ def _update_room_playing_status(data, room):
 def get_redis_url():
     redis_host = config.KEY_VALUE_STORE["host"]
     redis_port = config.KEY_VALUE_STORE["port"]
-    return "redis://%s:%s/2" % (redis_host, redis_port)
+    redis_db = config.KV_EVENTS_DB_INDEX
+    return "redis://%s:%s/%s" % (redis_host, redis_port, redis_db)
 
 
 # Routes
@@ -118,20 +119,20 @@ def set_application_routes(socketio, app):
         server_stats["nb_connections"] -= 1
         if server_stats["nb_connections"] < 0:
             server_stats["nb_connections"] = 0
-        app.logger.error(error)
+        app.logger.exception("Error during handling of an event: %s", error)
 
 
-def set_playlist_room_routes(socketio, app):
+def set_preview_room_routes(socketio, app):
     @app.route("/rooms", methods=["GET", "POST"])
     @jwt_required
     def rooms():
         return jsonify({"name": "%s Review rooms" % config.APP_NAME})
 
-    @socketio.on("preview-room:open-playlist", namespace="/events")
+    @socketio.on("preview-room:open", namespace="/events")
     @jwt_required
-    def on_open_playlist(data):
+    def on_open(data):
         """
-        when a person opens the playlist page he immediately enters the
+        when a person opens a page with a preview room he immediately enters the
         websocket room. This way he can see in live which people are in the
         review room. The user still has to explicitly enter the review room
         to actually be in sync with the other users
@@ -139,6 +140,7 @@ def set_playlist_room_routes(socketio, app):
         room, room_id = _get_room_from_data(data)
         rooms_data[room_id] = room
         join_room(room_id)
+        app.logger.warning("Room %s opened by %s", room_id, room)
         emit("preview-room:room-people-updated", room, room=room_id)
 
     @socketio.on("preview-room:join", namespace="/events")
@@ -160,7 +162,7 @@ def set_playlist_room_routes(socketio, app):
     @jwt_required
     def on_leave(data):
         user_id = get_jwt_identity()
-        room_id = data["playlist_id"]
+        room_id = data["room_id"]
         _leave_room(room_id, user_id)
 
     @socketio.on("preview-room:update-playing-status", namespace="/events")
@@ -174,19 +176,19 @@ def set_playlist_room_routes(socketio, app):
     @socketio.on("preview-room:add-annotation", namespace="/events")
     @jwt_required
     def on_add_annotation(data):
-        room_id = data["playlist_id"]
+        room_id = data["room_id"]
         emit("preview-room:add-annotation", data, room=room_id)
 
     @socketio.on("preview-room:remove-annotation", namespace="/events")
     @jwt_required
     def on_remove_annotation(data):
-        room_id = data["playlist_id"]
+        room_id = data["room_id"]
         emit("preview-room:remove-annotation", data, room=room_id)
 
     @socketio.on("preview-room:update-annotation", namespace="/events")
     @jwt_required
     def on_update_annotation(data):
-        room_id = data["playlist_id"]
+        room_id = data["room_id"]
         emit("preview-room:update-annotation", data, room=room_id)
 
     return app
@@ -201,7 +203,7 @@ def create_app():
     app.config.from_object(config)
     set_info_routes(socketio, app)
     set_application_routes(socketio, app)
-    set_playlist_room_routes(socketio, app)
+    set_preview_room_routes(socketio, app)
     socketio.init_app(app, message_queue=redis_url, async_mode="gevent")
     return (app, socketio)
 
