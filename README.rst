@@ -5,8 +5,8 @@ Zou is the memory of your animation production
 ----------------------------------------------
 
 Zou is an API that stores and manages data related to animation productions. It allows you to centralize 
-and access to all your data. Your tools connect to it and query the data from your production. Your 
-Artists manage their files and their tasks more efficiently. It helps them to spend more time on the 
+and access all your data. Your tools connect to it and query the data from your production. Your 
+artists manage their files and tasks more efficiently. It helps them spend more time on the 
 artistic side. 
 
 A dedicated Python client, `Gazu <https://gazu.cg-wire.com>`_, allows users to integrate Zou into the tools. 
@@ -20,8 +20,8 @@ Zou can:
 
 -  Store production data, such as projects, shots, assets, tasks, metadata files,
    and validations.
--  Track the progress of your artists
--  Store preview files and version them
+-  Track the progress of your artists.
+-  Store preview files and version them.
 -  Provide folder and file paths for any task.
 -  Import and Export data to CSV files.
 -  Provide helpers to manage workflow tasks (start, publish, retake).
@@ -30,8 +30,8 @@ Zou can:
 Installation and documentation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Installation of Zou requires the setup of third-party tools such as a database instance, so it is recommended
-to the follow the documentation:
+Installation of Zou requires the setup of third-party tools such as, a database instance, so it is recommended
+to follow the documentation:
 
 `https://zou.cg-wire.com/ <https://zou.cg-wire.com>`__
 
@@ -69,11 +69,11 @@ About authors
 ~~~~~~~~~~~~~
 
 Zou is written by CGWire, a company based in France. We help teams of animation
-studios to collaborate better. We provide tools to more than 50 studios spread
+studios collaborate better. We provide tools to more than 50 studios spread
 all around the world.
 
 On the technical side, we apply software craftmanship principles as much as
-possible. We love coding and consider that strong quality and good developer
+possible. We love coding and consider that high quality and good developer
 experience matter a lot.
 
 Visit `cg-wire.com <https://cg-wire.com>`__ for more information.
